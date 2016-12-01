@@ -17,7 +17,7 @@ import (
 var input_file = flag.String("i", "in.template", "input template")
 var output_file = flag.String("o", "out.file", "output template")
 var zk_host = flag.String("zk", "127.0.0.1", "input template")
-var system_name = flag.String("sn", "local", "system_name")
+var path = flag.String("path", "local", "path to read")
 
 func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
@@ -50,6 +50,7 @@ func writeLines(lines []string, path string) error {
 	w := bufio.NewWriter(file)
 	for _, line := range lines {
 		fmt.Fprintln(w, line)
+		fmt.Printf("%s\n", line)
 	}
 	return w.Flush()
 }
@@ -63,7 +64,7 @@ func process(lines []string, vars map[string]string) ([]string, error) {
 				lines_new[index] = strings.Replace(line, match[0][0], vars[match[0][1]], -1)
 			} else {
 
-				return lines_new, errors.New("cannot find variable " + match[0][1] + " in /" + *system_name + "/env" )
+				return lines_new, errors.New("cannot find variable " + match[0][1] + " in /" + *path )
 			}
 		} else {
 			lines_new[index] = line
@@ -84,7 +85,6 @@ func get_child(conn zk.Conn, path string) map[string]string{
 	for _, param := range strings.Split(string(data[:]),"\n") {
 		kv := strings.Split(param, "=")
 		if len(kv) == 2 {
-			fmt.Printf("%s=%s\n", kv[0], kv[1])
 			vars[kv[0]]=kv[1]
 		}
 	}
@@ -100,7 +100,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	vars := get_child(*conn, "/" + *system_name + "/env")
+	vars := get_child(*conn, "/" + *path)
 	template, err := readLines(*input_file)
 	if err != nil {
 		panic(err)
