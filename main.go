@@ -20,7 +20,6 @@ var zk_host = flag.String("zk", "127.0.0.1", "input template")
 var path = flag.String("path", "local", "path to read")
 var regex = flag.String("regex", ".*", "template regex")
 
-
 func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
 	log.Printf("%s took %s", name, elapsed)
@@ -62,11 +61,11 @@ func process(lines []string, vars map[string]string) ([]string, error) {
 	for index, line := range lines {
 		match := regexp.MustCompile(*regex).FindAllStringSubmatch(line, -1)
 		if match != nil {
-			if _, ok := vars[match[0][1]];ok  {
+			if _, ok := vars[match[0][1]]; ok {
 				lines_new[index] = strings.Replace(line, match[0][0], vars[match[0][1]], -1)
 			} else {
 
-				return lines_new, errors.New("cannot find variable " + match[0][1] + " in /" + *path )
+				return lines_new, errors.New("cannot find variable " + match[0][1] + " in /" + *path)
 			}
 		} else {
 			lines_new[index] = line
@@ -75,7 +74,7 @@ func process(lines []string, vars map[string]string) ([]string, error) {
 	err := new(error)
 	return lines_new, *err
 }
-func get_child(conn zk.Conn, path string) map[string]string{
+func getZkNodeData(conn zk.Conn, path string) map[string]string {
 	defer timeTrack(time.Now(), "get_child")
 	defer conn.Close()
 	data, _, err := conn.Get(path)
@@ -84,13 +83,23 @@ func get_child(conn zk.Conn, path string) map[string]string{
 		panic(err)
 	}
 	vars := make(map[string]string)
-	for _, param := range strings.Split(string(data[:]),"\n") {
+	for _, param := range strings.Split(string(data[:]), "\n") {
 		kv := strings.Split(param, "=")
 		if len(kv) == 2 {
-			vars[kv[0]]=kv[1]
+			vars[kv[0]] = kv[1]
 		}
 	}
 
+	return vars
+}
+
+func getEnvData(vars map[string]string) map[string]string {
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		if _, ok := vars[pair[0]]; !ok {
+			vars[pair[0]]=pair[1]
+		}
+	}
 	return vars
 }
 
@@ -102,12 +111,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	vars := get_child(*conn, "/" + *path)
+	vars := getZkNodeData(*conn, "/" + *path)
+	getEnvData(vars)
 	template, err := readLines(*input_file)
 	if err != nil {
 		panic(err)
 	}
-	result, err := process(template,vars)
+	result, err := process(template, vars)
 	if err != nil {
 		panic(err)
 	}
