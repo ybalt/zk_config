@@ -83,7 +83,8 @@ func getZkNodeData(conn zk.Conn, path string) map[string]string {
 		panic(err)
 	}
 	vars := make(map[string]string)
-	for _, param := range strings.Split(string(data[:]), "\r\n") {
+	data_string := strings.Replace(string(data[:]), "\r\n", "\n", -1)
+	for _, param := range strings.Split(data_string, "\n") {
 		kv := strings.Split(param, "=")
 		if len(kv) == 2 {
 			vars[kv[0]] = kv[1]
