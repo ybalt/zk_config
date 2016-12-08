@@ -19,6 +19,7 @@ var output_file = flag.String("o", "out.file", "output template")
 var zk_host = flag.String("zk", "127.0.0.1", "input template")
 var path = flag.String("path", "local", "path to read")
 var regex = flag.String("regex", ".*", "template regex")
+var print_out = flag.Bool("print", false, "print output file")
 
 func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
@@ -51,11 +52,14 @@ func writeLines(lines []string, path string) error {
 	w := bufio.NewWriter(file)
 	for _, line := range lines {
 		fmt.Fprintln(w, line)
-		fmt.Printf("%s\n", line)
+		if *print_out {
+			fmt.Printf("%s\n", line)
+		}
 	}
 	return w.Flush()
 }
 func process(lines []string, vars map[string]string) ([]string, error) {
+	fmt.Printf("processing %s to %s\n",*input_file, *output_file)
 	var lines_new []string
 	lines_new = make([]string, len(lines))
 	for index, line := range lines {
