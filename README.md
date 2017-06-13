@@ -1,3 +1,4 @@
+[![BCH compliance](https://bettercodehub.com/edge/badge/ybalt/zk_config?branch=master)](https://bettercodehub.com/)
 # zk_config
 small go program that reads Zookeper node with key=value lines and replace key in input file to new output file
 both with ZK data and os environment variables
